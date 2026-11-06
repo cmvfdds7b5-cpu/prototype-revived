@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#090d13">
+<title>PROTOTYPE: REVIVED — Browser Prototype</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080c12;font-family:Arial,Helvetica,sans-serif;touch-action:none}
+#game{position:fixed;inset:0}canvas{display:block;width:100%;height:100%}
+#hud{position:fixed;inset:0;pointer-events:none;color:#fff;text-shadow:0 2px 8px #000}
+#brand{position:absolute;top:calc(env(safe-area-inset-top) + 14px);left:14px;font-weight:900;letter-spacing:2px;font-size:13px;color:#f4f5f7}
+#brand span{color:#ef3340}#stats{position:absolute;top:calc(env(safe-area-inset-top) + 38px);left:14px;font-size:10px;letter-spacing:1.5px;color:#c7d0dc}
+#health{position:absolute;top:calc(env(safe-area-inset-top) + 58px);left:14px;width:145px;height:7px;background:#252a31;border:1px solid #5a626d;border-radius:8px;overflow:hidden}
+#healthFill{height:100%;width:100%;background:linear-gradient(90deg,#a30e20,#f04450)}
+#mission{position:absolute;top:calc(env(safe-area-inset-top) + 14px);right:14px;text-align:right;font-size:10px;letter-spacing:1px;color:#d5dce5;max-width:48%}
+#mission b{display:block;color:#fff;font-size:12px;margin-bottom:4px}
+#hint{position:absolute;left:50%;top:24%;transform:translateX(-50%);font-size:11px;letter-spacing:1px;color:#fff;background:#080c12a8;padding:8px 12px;border:1px solid #ffffff25;border-radius:5px;white-space:nowrap}
+#controls{position:absolute;inset:0;pointer-events:none}
+#stick{position:absolute;left:22px;bottom:calc(env(safe-area-inset-bottom) + 25px);width:122px;height:122px;border:1px solid #ffffff55;border-radius:50%;background:#10182088;pointer-events:auto;touch-action:none}
+#nub{position:absolute;left:36px;top:36px;width:50px;height:50px;border-radius:50%;background:#dce4ed55;border:1px solid #ffffff9a;box-shadow:0 2px 12px #0008}
+.action{position:absolute;pointer-events:auto;touch-action:none;border:1px solid #ffffff88;color:white;background:#151c25c9;border-radius:50%;width:60px;height:60px;font-size:10px;font-weight:bold;letter-spacing:.5px;box-shadow:0 4px 15px #0008}
+.action:active,.action.active{background:#9f1527dd;border-color:#ff8790}
+#attack{right:22px;bottom:calc(env(safe-area-inset-bottom) + 34px);width:72px;height:72px;background:#791725d9}
+#jump{right:102px;bottom:calc(env(safe-area-inset-bottom) + 108px)}
+#sprint{right:102px;bottom:calc(env(safe-area-inset-bottom) + 34px)}
+#power{right:22px;bottom:calc(env(safe-area-inset-bottom) + 122px)}
+#cam{position:absolute;right:12px;top:calc(env(safe-area-inset-top) + 78px);font-size:9px;color:#d9e0e8;background:#101820aa;padding:7px 9px;border:1px solid #ffffff33;border-radius:4px;pointer-events:auto}
+#overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#17202b 0%,#070a0f 70%);z-index:5;padding:24px}
+.panel{width:min(440px,100%);border:1px solid #ffffff30;background:#0c1119ed;padding:25px 22px;border-radius:12px;box-shadow:0 20px 70px #000b}
+.kicker{color:#f04450;font-size:10px;letter-spacing:3px;font-weight:bold}
+h1{font-size:clamp(30px,9vw,48px);line-height:.95;margin:10px 0 8px;letter-spacing:-1.5px}
+h1 span{color:#e52e40}.sub{color:#aab5c3;font-size:12px;line-height:1.55;margin:0 0 20px}
+#play{width:100%;height:50px;border:0;border-radius:5px;background:#c51d32;color:white;font-weight:900;letter-spacing:2px;font-size:13px}
+.note{font-size:10px;color:#778493;line-height:1.5;margin-top:14px}
+#toast{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);padding:10px 14px;background:#0b1019e8;border:1px solid #ffffff33;border-radius:6px;color:#fff;font-size:12px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:4}
+@media(min-width:800px){#stick{width:140px;height:140px}#nub{left:42px;top:42px}#hint{top:18%}}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="hud">
+ <div id="brand">PROTOTYPE<span>:</span> REVIVED</div>
+ <div id="stats">MANHATTAN // DAY 01</div>
+ <div id="health"><div id="healthFill"></div></div>
+ <div id="mission"><b>FREE ROAM</b>Explore the infected city</div>
+ <div id="hint">MOVE · JUMP · ATTACK · EXPLORE</div>
+ <div id="cam">DRAG RIGHT SIDE TO LOOK</div>
+</div>
+<div id="controls">
+ <div id="stick"><div id="nub"></div></div>
+ <button class="action" id="jump">JUMP</button>
+ <button class="action" id="sprint">RUN</button>
+ <button class="action" id="power">CLAW</button>
+ <button class="action" id="attack">ATTACK</button>
+</div>
+<div id="toast"></div>
+<div id="overlay"><div class="panel">
+ <div class="kicker">A FAN-MADE BROWSER GAME EXPERIMENT</div>
+ <h1>PROTOTYPE<span>:<br>REVIVED</span></h1>
+ <p class="sub">A first playable 3D city prototype. Explore a small Manhattan-inspired block, sprint, jump and test the bio-weapon attack. Built for touch screens.</p>
+ <button id="play">PLAY NOW</button>
+ <div class="note">This is an original prototype, not the 2009 game port. It uses placeholder geometry and no original game assets. Internet connection is required to load the 3D engine on first launch.</div>
+</div></div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+const root=document.getElementById('game');
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x8b9aa5);
+scene.fog=new THREE.Fog(0x8b9aa5,45,180);
+const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,350);
+const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=false;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+root.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xc9d9e8,0x30343b,2.0));
+const sun=new THREE.DirectionalLight(0xffe3ce,2.2);sun.position.set(-35,70,25);scene.add(sun);
+
+const mat=(c,rough=1)=>new THREE.MeshStandardMaterial({color:c,roughness:rough});
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(260,260),mat(0x343a3e));ground.rotation.x=-Math.PI/2;ground.position.y=-.08;scene.add(ground);
+const roadMat=mat(0x20262b),sideMat=mat(0x777a78),lineMat=mat(0xb5aa83);
+function box(w,h,d,m,x,y,z){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);scene.add(o);return o;}
+for(let i=-5;i<=5;i++){
+ box(7,.05,245,roadMat,i*22,.0,0);
+ box(245,.05,7,roadMat,0,.005,i*22);
+ box(.22,.025,245,lineMat,i*22+3.5,.035,0);
+ box(245,.025,.22,lineMat,0,.04,i*22+3.5);
+}
+const buildingMats=[0x59636b,0x77716b,0x4d5963,0x8a8176,0x46535b,0x6b7476].map(c=>mat(c));
+const windowMat=new THREE.MeshStandardMaterial({color:0x182a38,metalness:.25,roughness:.35});
+for(let gx=-4;gx<=4;gx++)for(let gz=-4;gz<=4;gz++){
+ if(Math.abs(gx)<=1&&Math.abs(gz)<=1)continue;
+ const x=gx*22+(Math.random()-.5)*4,z=gz*22+(Math.random()-.5)*4;
+ const w=9+Math.random()*5,d=9+Math.random()*5,h=12+Math.random()*43;
+ const b=box(w,h,d,buildingMats[Math.floor(Math.random()*buildingMats.length)],x,h/2,z);
+ // sparse facade windows, kept low-poly for mobile performance
+ const rows=Math.floor(h/4);
+ for(let r=0;r<rows;r++)for(let c=0;c<3;c++){
+  const win=new THREE.Mesh(new THREE.BoxGeometry(1.15,1.3,.08),windowMat);
+  win.position.set(x-w/2+(c+1)*w/4,2.5+r*3.5,z-d/2-.06);scene.add(win);
+ }
+ // rooftop structures
+ if(Math.random()>.45)box(w*.35,1.6,d*.3,mat(0x343b40),x,h+.8,z);
+}
+// street props
+for(let i=0;i<35;i++){
+ const x=(Math.random()-.5)*190,z=(Math.random()-.5)*190;
+ if(Math.abs(x%22)<6||Math.abs(z%22)<6)continue;
+ const trunk=box(.35,2.3,.35,mat(0x493b31),x,1.15,z);
+ const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(1.5,0),mat(0x35483d));crown.position.set(x,3,z);scene.add(crown);
+}
+// parked cars
+for(let i=0;i<22;i++){
+ const x=(Math.random()-.5)*180,z=(Math.random()-.5)*180;
+ if(Math.abs(x%22)<7||Math.abs(z%22)<7)continue;
+ const car=box(2.1,1.0,4.2,mat([0x263b4b,0x6b2528,0x999b99,0x25282c][i%4]),x,.65,z);
+ box(1.8,.55,1.8,mat(0x202d35),x,1.35,z-.25);
+}
+
+const player=new THREE.Group();scene.add(player);
+const bodyMat=mat(0x171c23),redMat=mat(0x9f1728),skinMat=mat(0x9c8c80);
+const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.48,.9,4,7),bodyMat);torso.position.y=1.45;player.add(torso);
+const head=new THREE.Mesh(new THREE.SphereGeometry(.31,8,6),skinMat);head.position.y=2.35;player.add(head);
+const coat=new THREE.Mesh(new THREE.BoxGeometry(.78,.55,.12),redMat);coat.position.set(0,1.45,-.43);player.add(coat);
+const legs=[];
+for(const x of [-.23,.23]){const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.16,.72,3,5),bodyMat);leg.position.set(x,.55,0);player.add(leg);legs.push(leg)}
+const arms=[];
+for(const x of [-.62,.62]){const arm=new THREE.Mesh(new THREE.CapsuleGeometry(.13,.65,3,5),bodyMat);arm.position.set(x,1.45,0);player.add(arm);arms.push(arm)}
+const blade=new THREE.Mesh(new THREE.BoxGeometry(.18,1.35,.12),redMat);blade.position.set(.85,1.55,0);blade.rotation.z=-.25;blade.visible=false;player.add(blade);
+
+const enemies=[];
+for(let i=0;i<12;i++){
+ const e=new THREE.Group();e.position.set((Math.random()-.5)*100,0,(Math.random()-.5)*100);
+ const em=new THREE.Mesh(new THREE.CapsuleGeometry(.38,.8,3,6),mat(0x5d6c55));em.position.y=1.15;e.add(em);
+ const eh=new THREE.Mesh(new THREE.SphereGeometry(.25,7,5),mat(0x827b70));eh.position.y=2.0;e.add(eh);
+ scene.add(e);enemies.push({obj:e,phase:Math.random()*6,alive:true});
+}
+player.position.set(0,0,0);
+let yaw=0,pitch=.22,vy=0,onGround=true,health=100,attackTime=0,claw=false,elapsed=0;
+const input={x:0,y:0,run:false,jump:false,attack:false,lookX:0};
+const stick=document.getElementById('stick'),nub=document.getElementById('nub');
+let stickId=null,lookId=null,lastX=0;
+function setStick(e){const r=stick.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=e.clientX-cx,dy=e.clientY-cy;const max=42,l=Math.hypot(dx,dy);if(l>max){dx=dx/l*max;dy=dy/l*max}nub.style.transform=`translate(${dx}px,${dy}px)`;input.x=dx/max;input.y=dy/max}
+stick.addEventListener('pointerdown',e=>{stickId=e.pointerId;stick.setPointerCapture(stickId);setStick(e)});
+stick.addEventListener('pointermove',e=>{if(e.pointerId===stickId)setStick(e)});
+function releaseStick(e){if(e.pointerId===stickId){stickId=null;input.x=0;input.y=0;nub.style.transform='translate(0,0)'}}
+stick.addEventListener('pointerup',releaseStick);stick.addEventListener('pointercancel',releaseStick);
+renderer.domElement.addEventListener('pointerdown',e=>{if(e.clientX>innerWidth*.42){lookId=e.pointerId;lastX=e.clientX;renderer.domElement.setPointerCapture(lookId)}});
+renderer.domElement.addEventListener('pointermove',e=>{if(e.pointerId===lookId){yaw-=(e.clientX-lastX)*.006;lastX=e.clientX}});
+renderer.domElement.addEventListener('pointerup',e=>{if(e.pointerId===lookId)lookId=null});
+function hold(id,down,up){const el=document.getElementById(id);el.addEventListener('pointerdown',e=>{e.preventDefault();el.classList.add('active');down()});['pointerup','pointercancel','pointerleave'].forEach(t=>el.addEventListener(t,()=>{el.classList.remove('active');if(up)up()}))}
+hold('jump',()=>{input.jump=true});hold('sprint',()=>input.run=true,()=>input.run=false);
+hold('attack',()=>{input.attack=true;attackTime=.42;toast('BIO-WEAPON STRIKE')},()=>input.attack=false);
+hold('power',()=>{claw=!claw;blade.visible=claw;toast(claw?'CLAW ACTIVE':'CLAW RETRACTED')});
+function toast(s){const t=document.getElementById('toast');t.textContent=s;t.style.opacity=1;clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.style.opacity=0,950)}
+document.getElementById('play').addEventListener('click',()=>{document.getElementById('overlay').style.display='none';toast('WELCOME TO MANHATTAN')});
+document.getElementById('cam').addEventListener('click',()=>{yaw=0;pitch=.22;toast('CAMERA RESET')});
+const clock=new THREE.Clock();
+function animate(){
+ requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);elapsed+=dt;
+ const forward=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));
+ const right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
+ const move=new THREE.Vector3().addScaledVector(right,input.x).addScaledVector(forward,-input.y);
+ if(move.lengthSq()>1)move.normalize();
+ const speed=input.run?11:5.4;
+ player.position.addScaledVector(move,speed*dt);
+ if(move.lengthSq()>.01)player.rotation.y=Math.atan2(-move.x,-move.z);
+ if(input.jump&&onGround){vy=8.5;onGround=false}input.jump=false;
+ vy-=20*dt;player.position.y+=vy*dt;if(player.position.y<=0){player.position.y=0;vy=0;onGround=true}
+ player.position.x=THREE.MathUtils.clamp(player.position.x,-115,115);player.position.z=THREE.MathUtils.clamp(player.position.z,-115,115);
+ const moving=move.lengthSq()>.02;legs[0].rotation.x=moving?Math.sin(elapsed*speed)*.65:0;legs[1].rotation.x=moving?-Math.sin(elapsed*speed)*.65:0;
+ arms[0].rotation.x=moving?-Math.sin(elapsed*speed)*.35:0;arms[1].rotation.x=moving?Math.sin(elapsed*speed)*.35:0;
+ if(attackTime>0){attackTime-=dt;arms[1].rotation.x=-1.4;blade.visible=true;blade.rotation.z=Math.sin(elapsed*24)*.8-.25;if(attackTime<=0)blade.visible=claw}
+ for(const en of enemies){if(!en.alive)continue;en.phase+=dt;const dist=en.obj.position.distanceTo(player.position);if(dist<15){const dir=new THREE.Vector3().subVectors(player.position,en.obj.position).setY(0).normalize();en.obj.position.addScaledVector(dir,dt*(dist<2?0:1.4));en.obj.rotation.y=Math.atan2(-dir.x,-dir.z)}else{en.obj.position.x+=Math.sin(en.phase*.6)*dt*.35;en.obj.position.z+=Math.cos(en.phase*.5)*dt*.35}}
+ const target=new THREE.Vector3(player.position.x,player.position.y+1.3,player.position.z);
+ const camOffset=new THREE.Vector3(Math.sin(yaw)*8,4.3,Math.cos(yaw)*8);
+ camera.position.lerp(target.clone().add(camOffset),1-Math.pow(.001,dt));camera.lookAt(target);
+ renderer.render(scene,camera);
+}
+animate();
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.5))});
+</script>
+</body></html>
